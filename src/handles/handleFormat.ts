@@ -15,7 +15,8 @@ async function handleFormat(
   config: IFormatterConfig,
   textDocument: TextDocument,
   text: string,
-  next: Handle
+  next: Handle,
+  range?: Range
 ): Promise<string | undefined> {
   const {
     command,
@@ -118,6 +119,43 @@ export async function formatDocument(
       Position.create(0, 0),
       Position.create(textDocument.lineCount + 1, 0)
     ),
+    newText: text
+  }]
+}
+
+export async function formatDocumentRange(
+  formatterConfigs: IFormatterConfig[],
+  textDocument: TextDocument,
+  range: Range,
+  token: CancellationToken
+): Promise<TextEdit[]> {
+
+  const resolve = formatterConfigs
+  .reverse()
+  .reduce((res: Handle, config: IFormatterConfig) => {
+    return async (text: string): Promise<string | undefined> => {
+      if (token.isCancellationRequested) {
+        return
+      }
+      let newText = text;
+      try {
+        newText = await handleFormat(config, textDocument, text, res, range)
+      } catch (err) {
+        logger.error(`ignore error: ${err.message || err.name || err}`)
+        newText = await res(text)
+      }
+      return newText
+    }
+  }, async (text: string) => text)
+
+  const text = await resolve(textDocument.getText(range))
+
+  if (!text) {
+    return
+  }
+
+  return [{
+    range,
     newText: text
   }]
 }
