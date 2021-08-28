@@ -63,6 +63,12 @@ async function handleFormat(
       cwd: workDir
     }
   )
+  let newStdout = stdout
+
+  if(range && stdout.endsWith('\n')) {
+    newStdout = stdout.substr(0, stdout.length - 1)
+  }
+
   let output = '';
   if (!ignoreExitCode && code > 0) {
     output = text
@@ -71,10 +77,10 @@ async function handleFormat(
   } else if (config.doesWriteToFile) {
     output = fs.readFileSync(URI.parse(textDocument.uri).fsPath, 'utf8')
   } else if (isStdout === undefined && isStderr === undefined) {
-    output = stdout
+    output = newStdout
   } else {
     if (isStdout) {
-      output += stdout
+      output += newStdout
     }
     if (isStderr) {
       output += stderr
