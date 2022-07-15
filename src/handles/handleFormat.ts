@@ -15,7 +15,8 @@ async function handleFormat(
   config: IFormatterConfig,
   textDocument: TextDocument,
   text: string,
-  next: Handle
+  next: Handle,
+  range?: Range
 ): Promise<string | undefined> {
   const {
     command,
@@ -62,6 +63,12 @@ async function handleFormat(
       cwd: workDir
     }
   )
+  let newStdout = stdout
+
+  if(range && stdout.endsWith('\n')) {
+    newStdout = stdout.substr(0, stdout.length - 1)
+  }
+
   let output = '';
   if (!ignoreExitCode && code > 0) {
     output = text
@@ -70,10 +77,10 @@ async function handleFormat(
   } else if (config.doesWriteToFile) {
     output = fs.readFileSync(URI.parse(textDocument.uri).fsPath, 'utf8')
   } else if (isStdout === undefined && isStderr === undefined) {
-    output = stdout
+    output = newStdout
   } else {
     if (isStdout) {
-      output += stdout
+      output += newStdout
     }
     if (isStderr) {
       output += stderr
@@ -118,6 +125,43 @@ export async function formatDocument(
       Position.create(0, 0),
       Position.create(textDocument.lineCount + 1, 0)
     ),
+    newText: text
+  }]
+}
+
+export async function formatDocumentRange(
+  formatterConfigs: IFormatterConfig[],
+  textDocument: TextDocument,
+  range: Range,
+  token: CancellationToken
+): Promise<TextEdit[]> {
+
+  const resolve = formatterConfigs
+  .reverse()
+  .reduce((res: Handle, config: IFormatterConfig) => {
+    return async (text: string): Promise<string | undefined> => {
+      if (token.isCancellationRequested) {
+        return
+      }
+      let newText = text;
+      try {
+        newText = await handleFormat(config, textDocument, text, res, range)
+      } catch (err) {
+        logger.error(`ignore error: ${err.message || err.name || err}`)
+        newText = await res(text)
+      }
+      return newText
+    }
+  }, async (text: string) => text)
+
+  const text = await resolve(textDocument.getText(range))
+
+  if (!text) {
+    return
+  }
+
+  return [{
+    range,
     newText: text
   }]
 }

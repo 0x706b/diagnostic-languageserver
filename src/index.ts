@@ -9,6 +9,7 @@ import {
   MessageType,
   TextDocumentChangeEvent,
   TextDocumentSyncKind,
+  DocumentRangeFormattingParams,
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument'
 
@@ -18,7 +19,7 @@ import {
   unsubscribe as diagnosticUnsubscribe
 } from './handles/handleDiagnostic'
 import logger from './common/logger';
-import { formatDocument } from './handles/handleFormat';
+import { formatDocument, formatDocumentRange } from './handles/handleFormat';
 
 // parse command line options
 const options = new Command("diagnostic-languageserver")
@@ -59,7 +60,8 @@ connection.onInitialize((param: InitializeParams) => {
   return {
     capabilities: {
       textDocumentSync: TextDocumentSyncKind.Incremental,
-      documentFormattingProvider: true
+      documentFormattingProvider: true,
+      documentRangeFormattingProvider: true
     }
   };
 });
@@ -90,6 +92,27 @@ documents.onDidClose((evt) => {
 
 // listen for document's open/close/change
 documents.listen(connection);
+
+connection.onDocumentRangeFormatting(async (params: DocumentRangeFormattingParams, token: CancellationToken) => {
+  const { textDocument, range } = params
+  if (!textDocument || !textDocument.uri) {
+    return
+  }
+  const doc = documents.get(textDocument.uri)
+  if(!doc) {
+    return
+  }
+  const { formatters, formatFiletypes } = config
+  if(!formatFiletypes[doc.languageId] && !formatFiletypes['*']) {
+    return
+  }
+  const formatterNames = [].concat(formatFiletypes[doc.languageId]).concat(formatFiletypes['*'])
+  const formatterConfigs = formatterNames.map(n => formatters[n]).filter(n => n)
+  if(formatterConfigs.length === 0) {
+    return
+  }
+  return formatDocumentRange(formatterConfigs, doc, range, token)
+})
 
 // handle format request
 connection.onDocumentFormatting(async (

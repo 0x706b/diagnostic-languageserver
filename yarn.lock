@@ -28,9 +28,10 @@
   resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.150.tgz#649fe44684c3f1fcb6164d943c5a61977e8cf0bd"
   integrity sha512-kMNLM5JBcasgYscD9x/Gvr6lTAv2NVgsKtet/hm93qMyf/D1pt+7jeEZklKJKxMVmXjxbRVQQGfqDSfipYCO6w==
 
-"@types/node@^11.11.3":
-  version "11.11.3"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-11.11.3.tgz#7c6b0f8eaf16ae530795de2ad1b85d34bf2f5c58"
+"@types/node@^18":
+  version "18.0.4"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-18.0.4.tgz#48aedbf35efb3af1248e4cd4d792c730290cd5d6"
+  integrity sha512-M0+G6V0Y4YV8cqzHssZpaNCqvYwlCiulmm0PwpNLF55r/+cT8Ol42CHRU1SEaYFH2rTwiiE1aYg/2g2rrtGdPA==
 
 aggregate-error@^3.0.0:
   version "3.1.0"

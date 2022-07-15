@@ -37,7 +37,7 @@ export async function executeFile(
       return arg.replace(/%filepath/g, fpath)
     }
     if (/%relativepath/.test(arg) && option && option.cwd) {
-      return arg.replace(/%relativepath/g, path.relative(option.cwd, fpath))
+      return arg.replace(/%relativepath/g, path.relative(typeof option.cwd === 'string' ? option.cwd : option.cwd.toString(), fpath))
     }
     if (/%filename/.test(arg)) {
       return arg.replace(/%filename/g, path.basename(fpath))
